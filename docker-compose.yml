@@ -1,0 +1,18 @@
+services:
+  backend:
+    build: ./backend
+    volumes:
+      - expense-data:/app/data
+    restart: unless-stopped
+    # Port not exposed externally — only reachable by frontend on internal network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  expense-data:
