@@ -65,3 +65,35 @@ def test_custom_category_usable_for_expense(client):
         "date": "2026-06-15",
     })
     assert resp.status_code == 201
+
+
+def test_create_category_whitespace_not_trimmed(client):
+    """Leading/trailing whitespace in a category name is preserved (not trimmed),
+    so ' entertainment ' is distinct from 'entertainment'."""
+    client.post("/api/categories", json={"name": "entertainment"})
+    resp = client.post("/api/categories", json={"name": " entertainment "})
+    assert resp.status_code == 201
+    # Both appear in the list as separate entries
+    list_resp = client.get("/api/categories")
+    names = [c["name"] for c in list_resp.json()]
+    assert "entertainment" in names
+    assert " entertainment " in names
+
+
+def test_create_category_special_characters(client):
+    """Categories can include special characters and emoji."""
+    for name in ("café", "🍕", "home & garden"):
+        resp = client.post("/api/categories", json={"name": name})
+        assert resp.status_code == 201, f"Expected 201 for name '{name}'"
+
+
+def test_create_category_name_max_length(client):
+    """A category name exactly 100 characters is accepted."""
+    resp = client.post("/api/categories", json={"name": "A" * 100})
+    assert resp.status_code == 201
+
+
+def test_create_category_name_too_long(client):
+    """A category name over 100 characters is rejected with 422."""
+    resp = client.post("/api/categories", json={"name": "A" * 101})
+    assert resp.status_code == 422
